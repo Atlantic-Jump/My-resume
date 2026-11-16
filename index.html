@@ -2,12 +2,12 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>长征知识挑战赛</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
-    font-family: "Microsoft YaHei", -apple-system, sans-serif;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
     background: linear-gradient(160deg, #6b1414, #2e0808);
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
     padding: 16px;
@@ -19,7 +19,7 @@
   h1 { color: #8b1a1a; font-size: 23px; text-align: center; margin-bottom: 6px; }
   .sub { text-align: center; color: #a06060; font-size: 12px; margin-bottom: 18px; }
   .topbar { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #8b5a5a; margin-bottom: 8px; }
-  .lives { font-size: 16px; letter-spacing: 2px; }
+  .lives { font-size: 16px; letter-spacing: 2px; color: #c0392b; font-weight: bold; }
   .bar { height: 7px; background: #f0d8d8; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
   .bar-in { height: 100%; background: linear-gradient(90deg,#c0392b,#e74c3c); width: 0; transition: width .3s; }
   .timerbar { height: 5px; background: #f0d8d8; border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
@@ -110,9 +110,10 @@ const QUESTIONS = [
 
 let idx = 0, score = 0, lives = 3, combo = 0, maxCombo = 0, wrongList = [], locked = false;
 let timer = null, timeLeft = 15;
+let totalCorrect = 0; // 记录答对题目数
 
 function startGame() {
-  idx = 0; score = 0; lives = 3; combo = 0; maxCombo = 0; wrongList = []; locked = false;
+  idx = 0; score = 0; lives = 3; combo = 0; maxCombo = 0; wrongList = []; locked = false; totalCorrect = 0;
   render();
 }
 
@@ -122,11 +123,17 @@ function render() {
   const q = QUESTIONS[idx];
   const app = document.getElementById('app');
   const pct = (idx / QUESTIONS.length * 100).toFixed(0);
+  
+  let lifeStr = "";
+  for(let i=0; i<3; i++){
+      lifeStr += (i < lives) ? "❤ " : "♡ ";
+  }
+
   app.innerHTML = `
     <h1>长征知识挑战赛</h1>
     <div class="topbar">
       <span>第 ${idx+1} / ${QUESTIONS.length} 题</span>
-      <span class="lives">${'❤️'.repeat(lives)}${'🖤'.repeat(3-lives)}</span>
+      <span class="lives">${lifeStr}</span>
       <span>得分：${score}${combo>1?` <span class="combo">连击x${combo}</span>`:''}</span>
     </div>
     <div class="bar"><div class="bar-in" style="width:${pct}%"></div></div>
@@ -178,6 +185,7 @@ function pick(i) {
     else if (j === i) b.classList.add('wrong');
   });
   if (i === q.a) {
+    totalCorrect++;
     combo++; maxCombo = Math.max(maxCombo, combo);
     let gain = 10 + (combo - 1) * 2;
     score += gain;
@@ -193,9 +201,13 @@ function pick(i) {
 function updateTop() {
   const top = document.querySelector('.topbar');
   if (top) {
+    let lifeStr = "";
+    for(let i=0; i<3; i++){
+        lifeStr += (i < Math.max(lives,0)) ? "❤ " : "♡ ";
+    }
     top.innerHTML = `
       <span>第 ${idx+1} / ${QUESTIONS.length} 题</span>
-      <span class="lives">${'❤️'.repeat(Math.max(lives,0))}${'🖤'.repeat(Math.max(3-lives,0))}</span>
+      <span class="lives">${lifeStr}</span>
       <span>得分：${score}${combo>1?` <span class="combo">连击x${combo}</span>`:''}</span>
     `;
   }
@@ -209,10 +221,6 @@ function nextQ() {
 
 function renderEnd() {
   clearInterval(timer);
-  const total = QUESTIONS.length;
-  const answered = idx + (locked ? 0 : 0);
-  const right = Math.round((score - 0) / 10);
-  const rate = answered > 0 ? ((score / (answered * 10 + (maxCombo>1?(maxCombo-1)*2:0))) * 100).toFixed(0) : 0;
   const app = document.getElementById('app');
   let reviewHtml = '';
   if (wrongList.length) {
@@ -227,7 +235,7 @@ function renderEnd() {
     <p class="sub">${reason}</p>
     <div class="center">
       <div class="score-big">${score} 分</div>
-      <div class="stat">正确题数：${right} 题</div>
+      <div class="stat">正确题数：${totalCorrect} 题</div>
       <div class="stat">最高连击：<span class="combo">x${maxCombo}</span></div>
       <div class="stat">错题数量：${wrongList.length} 题</div>
       <button class="btn" onclick="startGame()" style="margin-top:16px;">再来一次</button>
