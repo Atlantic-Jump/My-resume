@@ -1,1 +1,242 @@
-<h1 style="color:red; text-align:center; margin-top:100px;">服务器终于连上了！</h1>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>长征知识挑战赛</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", -apple-system, sans-serif;
+    background: linear-gradient(160deg, #6b1414, #2e0808);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .card {
+    background: #fff8f0; border-radius: 18px; width: 100%; max-width: 600px;
+    padding: 26px 22px; box-shadow: 0 14px 44px rgba(0,0,0,.45);
+  }
+  h1 { color: #8b1a1a; font-size: 23px; text-align: center; margin-bottom: 6px; }
+  .sub { text-align: center; color: #a06060; font-size: 12px; margin-bottom: 18px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #8b5a5a; margin-bottom: 8px; }
+  .lives { font-size: 16px; letter-spacing: 2px; }
+  .bar { height: 7px; background: #f0d8d8; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+  .bar-in { height: 100%; background: linear-gradient(90deg,#c0392b,#e74c3c); width: 0; transition: width .3s; }
+  .timerbar { height: 5px; background: #f0d8d8; border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
+  .timerbar-in { height: 100%; background: #e67e22; width: 100%; transition: width 1s linear; }
+  .q { font-size: 16.5px; color: #3a1a1a; line-height: 1.6; margin-bottom: 16px; font-weight: 600; }
+  .opt {
+    display: block; width: 100%; text-align: left; padding: 11px 15px; margin-bottom: 9px;
+    background: #fff; border: 2px solid #e8cfcf; border-radius: 10px;
+    font-size: 14.5px; color: #4a2a2a; cursor: pointer; transition: all .18s;
+  }
+  .opt:hover:not(:disabled) { border-color: #c0392b; background: #fff0f0; }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: #e8f8ec; border-color: #27ae60; color: #1e7a3e; font-weight: 600; }
+  .opt.wrong { background: #fdeaea; border-color: #c0392b; color: #a02020; }
+  .exp {
+    display: none; margin-top: 12px; padding: 13px;
+    background: #fff4e6; border-left: 4px solid #e67e22;
+    border-radius: 6px; font-size: 13.5px; color: #6b4423; line-height: 1.6;
+  }
+  .next {
+    display: none; width: 100%; margin-top: 14px; padding: 12px;
+    background: #c0392b; color: #fff; border: none; border-radius: 10px;
+    font-size: 15.5px; font-weight: 600; cursor: pointer;
+  }
+  .next:hover { background: #a93226; }
+  .center { text-align: center; }
+  .btn {
+    padding: 13px 38px; background: #c0392b; color: #fff;
+    border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer;
+  }
+  .btn:hover { background: #a93226; }
+  .score-big { font-size: 46px; color: #c0392b; font-weight: 700; margin: 8px 0; }
+  .stat { color: #8b5a5a; font-size: 14.5px; margin-bottom: 6px; line-height: 1.8; }
+  .combo { color: #e67e22; font-weight: 700; }
+  .review { text-align: left; max-height: 240px; overflow-y: auto; margin-top: 12px; }
+  .review-item { padding: 9px 0; border-bottom: 1px dashed #e8cfcf; font-size: 12.5px; color: #6b4423; line-height: 1.6; }
+  .review-item b { color: #8b1a1a; }
+  .rule { color:#6b4423; line-height:1.9; font-size:14px; text-align:left; margin:0 auto 22px; max-width:320px; }
+</style>
+</head>
+<body>
+<div class="card" id="app">
+  <h1>长征知识挑战赛</h1>
+  <p class="sub">极限难度 · 限时 · 连击 · 三条命</p>
+  <div class="rule">
+    · 共 30 道高难度单选题<br>
+    · 每题限时 15 秒，超时判错<br>
+    · 答对基础 10 分，连击越高加分越多<br>
+    · 共 3 条命，答错或超时扣 1 条<br>
+    · 命耗尽提前结束
+  </div>
+  <div class="center"><button class="btn" onclick="startGame()">开始挑战</button></div>
+</div>
+
+<script>
+const QUESTIONS = [
+  { q: "中央红军长征出发时，中共中央机关和红军总部所在的根据地首府是？", o: ["井冈山","瑞金","延安","遵义"], a: 1, e: "1934年10月，中央红军从江西瑞金等地出发开始长征，瑞金是当时中央苏区的首府。" },
+  { q: "遵义会议召开的具体时间是？", o: ["1934年10月","1935年1月","1935年6月","1936年10月"], a: 1, e: "遵义会议于1935年1月15日至17日召开，是党的历史上一个生死攸关的转折点。" },
+  { q: "四渡赤水战役中，红军主要机动于哪两条河之间？", o: ["赤水河与乌江","赤水河与长江","金沙江与赤水河","大渡河与赤水河"], a: 0, e: "四渡赤水期间，红军在赤水河与乌江之间灵活机动，摆脱了几十万国民党军的围追堵截。" },
+  { q: "飞夺泸定桥时，红军突击队夺桥的勇士共有多少人？", o: ["18人","22人","24人","30人"], a: 1, e: "1935年5月29日，红四团22名突击队员冒着弹雨攀铁索夺下泸定桥。" },
+  { q: "红军长征中翻越的第一座大雪山夹金山，海拔约为？", o: ["3000多米","4000多米","5000多米","6000多米"], a: 1, e: "夹金山海拔4000多米，1935年6月中央红军翻越此山，是长征中翻越的第一座大雪山。" },
+  { q: "红军三大主力会师，标志长征胜利结束，会师地点是？", o: ["陕西吴起镇","甘肃会宁、静宁将台堡","贵州遵义","四川懋功"], a: 1, e: "1936年10月，红一、红二、红四方面军在甘肃会宁、静宁将台堡会师，长征胜利结束。" },
+  { q: "《七律·长征》中“五岭逶迤腾细浪”的“五岭”指？", o: ["秦岭等五座山","南岭山脉的五座岭","太行山五峰","大巴山五岭"], a: 1, e: "五岭指大庾、骑田、萌渚、都庞、越城五岭，属南岭山脉，红军长征曾翻越。" },
+  { q: "长征途中，红军在贵州召开的、为遵义会议作准备的会议是？", o: ["黎平会议","猴场会议","通道会议","扎西会议"], a: 0, e: "1934年12月黎平会议采纳毛泽东向贵州转兵的建议，为遵义会议奠定基础。" },
+  { q: "“半条被子”故事中，三名女红军借宿的是哪一省的村庄？", o: ["江西","湖南","贵州","四川"], a: 1, e: "故事发生在湖南汝城县沙洲村，三名女红军把仅有的一床被子剪下一半留给徐解秀老人。" },
+  { q: "红军过草地时，最艰险的地带位于今天的？", o: ["四川若尔盖一带","甘肃河西走廊","青海柴达木","宁夏六盘山"], a: 0, e: "红军长征过草地主要在四川若尔盖一带的高原沼泽，气候恶劣、粮食奇缺。" },
+  { q: "长征中，红二十五军最先到达陕北，其出发地是？", o: ["鄂豫皖根据地","湘鄂西根据地","川陕根据地","中央苏区"], a: 0, e: "红二十五军1934年11月从鄂豫皖根据地出发，1935年9月到达陕北，与陕北红军会合。" },
+  { q: "“雄关漫道真如铁，而今迈步从头越”出自毛泽东哪首词？", o: ["《忆秦娥·娄山关》","《清平乐·六盘山》","《七律·长征》","《沁园春·雪》"], a: 0, e: "出自《忆秦娥·娄山关》，写于1935年遵义会议后红军二渡赤水、攻占娄山关之时。" },
+  { q: "红军长征中强渡大渡河的先头部队是？", o: ["红一团","红四团","红三军团","红五军团"], a: 0, e: "1935年5月，红一团在安顺场强渡大渡河，十七勇士乘小船冒火力渡河成功。" },
+  { q: "长征途中，中共中央政治局在四川召开的、确定北上方针的会议是？", o: ["两河口会议","毛儿盖会议","巴西会议","俄界会议"], a: 0, e: "1935年6月两河口会议确定了北上建立川陕甘根据地的方针。" },
+  { q: "红军长征中“爬雪山”翻越的党岭山位于？", o: ["四川","青海","甘肃","云南"], a: 0, e: "党岭山位于四川丹巴一带，海拔5000米左右，是红军长征翻越的雪山之一。" },
+  { q: "中央红军长征到达陕北吴起镇的时间是？", o: ["1935年10月","1935年12月","1936年10月","1934年10月"], a: 0, e: "1935年10月，中央红军到达陕北吴起镇，与陕北红军会合，中央红军长征胜利结束。" },
+  { q: "“不到长城非好汉”出自毛泽东哪首词？", o: ["《清平乐·六盘山》","《忆秦娥·娄山关》","《七律·长征》","《念奴娇·昆仑》"], a: 0, e: "出自《清平乐·六盘山》，1935年10月红军翻越六盘山时所作。" },
+  { q: "长征中，红军在云南皎平渡顺利渡过的河流是？", o: ["金沙江","大渡河","赤水河","乌江"], a: 0, e: "1935年5月，红军在云南皎平渡巧渡金沙江，摆脱了国民党军的追击。" },
+  { q: "红军长征中，红二、红六军团在谁的率领下开始长征？", o: ["贺龙、任弼时","彭德怀、滕代远","徐向前、陈昌浩","刘伯承、邓小平"], a: 0, e: "1935年11月，红二、红六军团在贺龙、任弼时等率领下从湘鄂川黔根据地出发长征。" },
+  { q: "“红军不怕远征难”中“远征”指红军行程约多少里？", o: ["一万五千里","二万五千里","三万里","五千里"], a: 1, e: "中央红军长征行程约二万五千里，故长征常被称为“二万五千里长征”。" },
+  { q: "长征途中，红军在贵州召开的猴场会议主要解决了什么问题？", o: ["确定北上方针","限制博古、李德军事指挥权","决定东进","整编部队"], a: 1, e: "1935年1月猴场会议重申黎平会议决定，限制博古、李德的军事指挥权，为遵义会议作准备。" },
+  { q: "红军长征中“过草地”大致发生在哪一年？", o: ["1934年","1935年","1936年","1937年"], a: 1, e: "中央红军1935年8月过草地，红二、红四方面军则在此后不同时间过草地。" },
+  { q: "长征中，红军在甘肃腊子口突破的封锁线是由谁部防守？", o: ["国民党中央军","鲁大昌部","马家军","川军"], a: 1, e: "1935年9月，红军攻克天险腊子口，守敌为国民党鲁大昌部，打开了北上通道。" },
+  { q: "“万水千山只等闲”中的“等闲”意思是？", o: ["等待空闲","平常、寻常","等一等","闲散"], a: 1, e: "“等闲”意为平常、寻常，全句表现红军把千山万水视作平常的豪迈气概。" },
+  { q: "长征中，中央红军在湖南通道召开的会议主要讨论？", o: ["红军去向问题","整编问题","后勤问题","人事问题"], a: 0, e: "1934年12月通道会议讨论红军行军方向，毛泽东建议改向敌人力量薄弱的贵州前进。" },
+  { q: "红军长征中翻越的六盘山位于今天的？", o: ["宁夏","陕西","甘肃","内蒙古"], a: 0, e: "六盘山位于宁夏南部，1935年10月红军翻越六盘山，毛泽东写下《清平乐·六盘山》。" },
+  { q: "长征中，红军在四川懋功会师的是哪两支红军？", o: ["红一、红四方面军","红一、红二方面军","红二、红四方面军","红一、红二十五军"], a: 0, e: "1935年6月，中央红军（红一方面军）与红四方面军在四川懋功会师。" },
+  { q: "“今日长缨在手，何时缚住苍龙”中的“苍龙”喻指？", o: ["日本侵略者","国民党反动派","自然灾害","帝国主义"], a: 1, e: "出自《清平乐·六盘山》，“苍龙”喻指国民党反动派，表达红军必胜的信念。" },
+  { q: "长征中，红军在贵州娄山关取得的胜利发生在哪次战役期间？", o: ["四渡赤水","强渡大渡河","飞夺泸定桥","突破乌江"], a: 0, e: "1935年2月，红军二渡赤水后攻占娄山关，取得长征以来第一个大胜仗，属四渡赤水战役。" },
+  { q: "中央红军长征出发时约8.6万人，到达陕北时约剩多少人？", o: ["3万余人","5万余人","7千余人","1万余人"], a: 2, e: "中央红军长征出发时约8.6万人，到达陕北时约剩7千余人，损失极其惨重。" }
+];
+
+let idx = 0, score = 0, lives = 3, combo = 0, maxCombo = 0, wrongList = [], locked = false;
+let timer = null, timeLeft = 15;
+
+function startGame() {
+  idx = 0; score = 0; lives = 3; combo = 0; maxCombo = 0; wrongList = []; locked = false;
+  render();
+}
+
+function render() {
+  if (idx >= QUESTIONS.length || lives <= 0) { renderEnd(); return; }
+  locked = false; timeLeft = 15;
+  const q = QUESTIONS[idx];
+  const app = document.getElementById('app');
+  const pct = (idx / QUESTIONS.length * 100).toFixed(0);
+  app.innerHTML = `
+    <h1>长征知识挑战赛</h1>
+    <div class="topbar">
+      <span>第 ${idx+1} / ${QUESTIONS.length} 题</span>
+      <span class="lives">${'❤️'.repeat(lives)}${'🖤'.repeat(3-lives)}</span>
+      <span>得分：${score}${combo>1?` <span class="combo">连击x${combo}</span>`:''}</span>
+    </div>
+    <div class="bar"><div class="bar-in" style="width:${pct}%"></div></div>
+    <div class="timerbar"><div class="timerbar-in" id="tbar"></div></div>
+    <div class="q">${q.q}</div>
+    <div id="opts">
+      ${q.o.map((t,i)=>`<button class="opt" onclick="pick(${i})">${String.fromCharCode(65+i)}. ${t}</button>`).join('')}
+    </div>
+    <div class="exp" id="exp"><b>解析：</b>${q.e}</div>
+    <button class="next" id="next" onclick="nextQ()">${idx===QUESTIONS.length-1?'查看结果':'下一题'}</button>
+  `;
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timer);
+  const tbar = document.getElementById('tbar');
+  if (tbar) tbar.style.width = '100%';
+  timer = setInterval(() => {
+    timeLeft--;
+    if (tbar) tbar.style.width = (timeLeft / 15 * 100) + '%';
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      if (!locked) timeout();
+    }
+  }, 1000);
+}
+
+function timeout() {
+  locked = true;
+  const q = QUESTIONS[idx];
+  combo = 0; lives--;
+  wrongList.push({ q: q.q, correct: q.o[q.a], e: q.e });
+  const opts = document.querySelectorAll('.opt');
+  opts.forEach((b, j) => { b.disabled = true; if (j === q.a) b.classList.add('correct'); });
+  document.getElementById('exp').style.display = 'block';
+  document.getElementById('next').style.display = 'block';
+  updateTop();
+}
+
+function pick(i) {
+  if (locked) return;
+  locked = true; clearInterval(timer);
+  const q = QUESTIONS[idx];
+  const opts = document.querySelectorAll('.opt');
+  opts.forEach((b, j) => {
+    b.disabled = true;
+    if (j === q.a) b.classList.add('correct');
+    else if (j === i) b.classList.add('wrong');
+  });
+  if (i === q.a) {
+    combo++; maxCombo = Math.max(maxCombo, combo);
+    let gain = 10 + (combo - 1) * 2;
+    score += gain;
+  } else {
+    combo = 0; lives--;
+    wrongList.push({ q: q.q, correct: q.o[q.a], e: q.e });
+  }
+  document.getElementById('exp').style.display = 'block';
+  document.getElementById('next').style.display = 'block';
+  updateTop();
+}
+
+function updateTop() {
+  const top = document.querySelector('.topbar');
+  if (top) {
+    top.innerHTML = `
+      <span>第 ${idx+1} / ${QUESTIONS.length} 题</span>
+      <span class="lives">${'❤️'.repeat(Math.max(lives,0))}${'🖤'.repeat(Math.max(3-lives,0))}</span>
+      <span>得分：${score}${combo>1?` <span class="combo">连击x${combo}</span>`:''}</span>
+    `;
+  }
+}
+
+function nextQ() {
+  idx++;
+  if (lives <= 0) { renderEnd(); return; }
+  render();
+}
+
+function renderEnd() {
+  clearInterval(timer);
+  const total = QUESTIONS.length;
+  const answered = idx + (locked ? 0 : 0);
+  const right = Math.round((score - 0) / 10);
+  const rate = answered > 0 ? ((score / (answered * 10 + (maxCombo>1?(maxCombo-1)*2:0))) * 100).toFixed(0) : 0;
+  const app = document.getElementById('app');
+  let reviewHtml = '';
+  if (wrongList.length) {
+    reviewHtml = `<div class="review"><p style="font-weight:600;color:#8b1a1a;margin-bottom:8px;">错题回顾（${wrongList.length}题）</p>` +
+      wrongList.map(w => `<div class="review-item"><b>${w.q}</b><br>正确答案：${w.correct}<br>${w.e}</div>`).join('') + `</div>`;
+  } else {
+    reviewHtml = `<p style="color:#27ae60;font-weight:600;margin-top:10px;">全部答对，长征精神满分！</p>`;
+  }
+  const reason = lives <= 0 ? '生命耗尽，挑战结束' : '恭喜完成全部题目';
+  app.innerHTML = `
+    <h1>挑战结束</h1>
+    <p class="sub">${reason}</p>
+    <div class="center">
+      <div class="score-big">${score} 分</div>
+      <div class="stat">正确题数：${right} 题</div>
+      <div class="stat">最高连击：<span class="combo">x${maxCombo}</span></div>
+      <div class="stat">错题数量：${wrongList.length} 题</div>
+      <button class="btn" onclick="startGame()" style="margin-top:16px;">再来一次</button>
+    </div>
+    ${reviewHtml}
+  `;
+}
+
+render();
+</script>
+</body>
+</html>
